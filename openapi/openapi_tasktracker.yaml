@@ -1,0 +1,1565 @@
+openapi: 3.0.3
+info:
+  title: Task Tracker API
+  version: "0.1"
+  description: An API for managing tasks and projects
+servers: 
+  - url: https://api.task-tracker.example/v1
+tags:
+  - name: Users
+    description: Users and authentication
+  - name: Tasks
+    description: Tasks and properties
+  - name: Projects
+    description: Projects
+  - name: Activity Log
+    description: History log for tasks
+components:
+  schemas:
+    user:
+      type: object
+      properties: 
+        user_id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+        description:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+      required:
+        - user_id
+        - username
+        - password       
+    task:
+      type: object
+      properties: 
+        task_id:
+          type: integer
+          readOnly: true
+        project_id:
+          type: integer
+        task_name:
+          type: string
+          maxLength: 100
+          minLength: 10
+        description:
+          type: string
+          maxLength: 500
+          minLength: 20
+        deadline:
+          type: string
+          format: date
+          example: "2026-09-16"
+        assigned_user_id:
+          type: integer
+        priority:
+          type: string
+          default: medium
+          enum: 
+            - low
+            - medium
+            - high
+            - blocker
+        files:
+          type: array
+          items: 
+            $ref: "#/components/schemas/file"
+        comments:
+          type: array
+          items: 
+            $ref: "#/components/schemas/comment"
+        tags:
+          type: array
+          items: 
+            $ref: "#/components/schemas/tag"
+        status:
+          type: string
+          default: backlog
+          enum: 
+            - backlog
+            - analysis
+            - in_progress
+            - testing
+            - ready_to_release
+            - released
+            - trashed
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by_user_id:
+          type: integer
+          readOnly: true
+      required:
+        - task_id
+        - task_name
+        - description
+        - priority
+        - status
+        - created_date
+        - created_by_user_id
+    createTaskRequest:
+      type: object
+      properties: 
+        project_id:
+          type: integer
+        task_name:
+          type: string
+          maxLength: 100
+          minLength: 10
+        description:
+          type: string
+          maxLength: 500
+          minLength: 20
+        deadline:
+          type: string
+          format: date
+          example: "2026-09-16"
+        assigned_user_id:
+          type: integer
+        priority:
+          type: string
+          default: medium
+          enum: 
+            - low
+            - medium
+            - high
+            - blocker
+      required:
+        - task_name
+        - description
+    updateTaskRequest:
+      type: object
+      properties: 
+        project_id:
+          type: integer
+        task_name:
+          type: string
+          maxLength: 100
+          minLength: 10
+        description:
+          type: string
+          maxLength: 500
+          minLength: 20
+        deadline:
+          type: string
+          format: date
+          example: "2026-09-16"
+        assigned_user_id:
+          type: integer
+        priority:
+          type: string
+          enum: 
+            - low
+            - medium
+            - high
+            - blocker
+        status:
+          type: string
+          enum: 
+            - backlog
+            - analysis
+            - in_progress
+            - testing
+            - ready_to_release
+            - released
+            - trashed
+    activityLog:
+      type: object
+      properties: 
+        event_id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: integer
+          readOnly: true
+        event_type:
+          type: string
+          readOnly: true
+          enum: 
+            - task_created
+            - status_changed
+            - comment_added
+            - file_added
+        old_value:
+          type: string
+          readOnly: true
+        new_value:
+          type: string
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        changed_at:
+          type: string
+          format: date-time
+          readOnly: true
+    project:
+      type: object
+      properties: 
+        project_id:
+          type: integer
+          readOnly: true
+        project_name: 
+          type: string
+          maxLength: 100
+          minLength: 10
+        description:
+          type: string
+          maxLength: 1000
+          minLength: 20
+        status:
+          type: string
+          default: new
+          enum: 
+            - new
+            - analysis
+            - in_progress
+            - done
+            - cancelled       
+        created_by_user_id:
+          type: integer
+          readOnly: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - project_id
+        - project_name
+        - status
+        - created_by_user_id
+        - created_date
+    createProjectRequest:
+      type: object
+      properties: 
+        project_name: 
+          type: string
+          maxLength: 100
+          minLength: 10
+        description:
+          type: string
+          maxLength: 1000
+          minLength: 20     
+      required:
+        - project_name
+    updateProjectRequest:
+      type: object
+      properties: 
+        project_name: 
+          type: string
+          maxLength: 100
+          minLength: 10
+        description:
+          type: string
+          maxLength: 1000
+          minLength: 20
+        status:
+          type: string
+          enum: 
+            - new
+            - analysis
+            - in_progress
+            - done
+            - cancelled       
+    membersInProject:
+      type: object
+      properties: 
+        project_id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: integer
+        role:
+          type: string
+          enum: 
+            - developer
+            - manager
+        invited_by_user_id:
+          type: integer
+          readOnly: true
+        invited_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - project_id
+        - user_id
+        - role
+        - invited_by_user_id
+        - invited_at
+    file:
+      type: object
+      properties: 
+        file_id:
+          type: integer
+          readOnly: true
+        file_name: 
+          type: string
+          maxLength: 50
+          minLength: 2
+        link:
+          type: string
+          readOnly: true
+        task_id:
+          type: integer
+        added_by_user_id:
+          type: integer
+          readOnly: true
+      required:
+        - file_id
+        - file_name
+        - link
+        - task_id
+        - added_by_user_id
+    comment:
+      type: object
+      properties: 
+        comment_id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          maxLength: 400
+          minLength: 5
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        task_id:
+          type: integer
+        created_by_user_id:
+          type: integer
+          readOnly: true
+      required:
+        - comment_id
+        - text
+        - created_at
+        - task_id
+        - created_by_user_id
+    commentRequest:
+      type: object
+      properties: 
+        text:
+          type: string
+          maxLength: 400
+          minLength: 5
+      required:
+        - text
+    tag:
+      type: object
+      properties: 
+        tag_id:
+          type: integer
+          readOnly: true
+        tag_name:
+          type: string
+      required:
+        - tag_id
+        - tag_name
+    createTagRequest:
+      type: object
+      properties:
+        tag_name:
+          type: string
+      required:
+        - tag_name
+    addTagToTaskRequest:
+      type: object
+      properties:
+        tag_id:
+          type: integer
+      required:
+        - tag_id    
+    error:
+      type: object
+      properties: 
+        error_code:
+          type: string
+          description: Code indicating error type.   
+        message:
+          type: string
+          description: Human-readable error message.           
+        details: 
+          type: string
+          description: Description of the error.
+          example: Task name is required
+      required:
+        - error_code
+        - message
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses: 
+    badRequest:
+      description: 400 Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    unauthorized:
+      description: 401 Resource needs authorization
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    forbidden:
+      description: 403 No permission to work with resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    notFound:
+      description: 404 Resource is not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    conflict:
+      description: 409 Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    internalServerError:
+      description: 500 Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    serviceUnavailable:
+      description: 503 Service is down
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+security:
+  - BearerAuth: [] 
+paths: 
+  /users:
+    get:
+      tags:
+        - Users
+      operationId: ListOrSearchUsers
+      summary: List users
+      parameters:
+        - name: limit
+          in: query
+          description: The maximum number of results to return.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          description: Use the cursor from the response to access more results.
+          schema:
+            type: string
+        - name: username
+          in: query
+          description: Username account
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                      $ref: "#/components/schemas/user"
+                  cursor:
+                    type: string
+                    description: Cursor for the next result page.
+                    nullable: true
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"    
+    post:
+      tags:
+        - Users
+      operationId: RegisterUser
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/user"
+      security: []
+      responses:
+        '201':
+          description: OK
+          headers:
+            Location:
+              description: URI of the created user
+              schema:
+                type: string
+                format: uri               
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '409':
+          $ref: "#/components/responses/conflict"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"           
+  /tokens:
+    post:
+      tags:
+        - Users
+      operationId: CreateSession
+      summary: Create a new token
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties: 
+                username:
+                  type: string
+                  example: poliakova.t.i
+                password:
+                  type: string
+                  format: password
+              required:
+                - username
+                - password
+      responses: 
+        '200':
+          description:  Successfully created a token
+          content: 
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  token:
+                    type: string
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"    
+      security: []                            
+  /tasks: 
+    get:
+      tags:
+        - Tasks
+      operationId: ListOrSearchTasks
+      summary: List tasks
+      parameters:
+        - name: limit
+          in: query
+          description: The maximum number of results to return.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          description: Use the cursor from the response to access more results.
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Task status
+          schema:
+            type: string
+            enum: 
+              - backlog
+              - analysis
+              - in_progress
+              - testing
+              - ready_to_release
+              - released
+              - trashed            
+        - name: priority
+          in: query
+          description: Priority of the task
+          schema:
+            type: string
+            enum: 
+              - low
+              - medium
+              - high
+              - blocker            
+        - name: deadline
+          in: query
+          description: Deadline of the task
+          schema:
+            type: string
+            format: date
+        - name: created_by_user_id
+          in: query
+          schema:
+            type: integer
+        - name: assigned_user_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                      $ref: "#/components/schemas/task"
+                  cursor:
+                    type: string
+                    description: Cursor for the next result page.
+                    nullable: true
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"      
+    post:
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - Tasks
+      operationId: CreateTask
+      summary: Create a new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createTaskRequest"
+      responses:
+        '201':
+          description: OK
+          headers:
+            Location:
+              description: URI of the created task
+              schema:
+                type: string
+                format: uri  
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+  /tasks/{taskId}:
+    parameters:
+      - name: taskId
+        in: path
+        description: Id of the task
+        schema:
+          type: integer
+        required: true    
+    get:
+      tags:
+        - Tasks
+      operationId: ViewTask
+      summary: View task with id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/task"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+    patch:
+      tags:
+        - Tasks
+      operationId: UpdateTask
+      summary: Update one field or several fields of the task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/updateTaskRequest"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/task"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+    delete:
+      tags:
+        - Tasks
+      operationId: DeleteTask
+      summary: Change status of the task to trashed.
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+  /tasks/{taskId}/files:
+    parameters:
+        - name: taskId
+          in: path
+          description: Id of the task
+          schema:
+            type: integer
+          required: true
+    get:
+      tags:
+        - Tasks
+      operationId: ViewFilesOfTask
+      summary: List files of the task
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                     $ref: "#/components/schemas/file"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+    post:
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid      
+      tags:
+        - Tasks
+      operationId: UploadFile
+      summary: Upload a file and attach it to the task
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties: 
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        '201':
+          description: OK
+          headers:
+            Location:
+              description: URI of the uploaded file
+              schema:
+                type: string
+                format: uri  
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+  /tasks/{taskId}/files/{fileId}:
+    parameters:
+        - name: taskId
+          in: path
+          description: Id of the task
+          schema:
+            type: integer
+          required: true
+        - name: fileId
+          in: path
+          description: Id of the file
+          schema:
+            type: integer
+          required: true
+    delete:
+      tags:
+        - Tasks
+      operationId: DeleteFile
+      summary: Delete the file
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+  /tasks/{taskId}/comments:
+    parameters:
+      - name: taskId
+        in: path
+        description: Id of the task
+        schema:
+          type: integer
+        required: true    
+    get:
+      tags:
+        - Tasks
+      operationId: ViewCommentsOfTask
+      summary: List comments of the task
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                     $ref: "#/components/schemas/comment"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+    post:
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid      
+      tags:
+        - Tasks
+      operationId: PostComment
+      summary: Post a new comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/commentRequest"
+      responses:
+        '201':
+          description: OK
+          headers:
+            Location:
+              description: URI of the created comment
+              schema:
+                type: string
+                format: uri  
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+  /tasks/{taskId}/comments/{commentId}:
+    parameters:
+        - name: taskId
+          in: path
+          description: Id of the task
+          schema:
+            type: integer
+          required: true
+        - name: commentId
+          in: path
+          description: Id of the comment
+          schema:
+            type: integer
+          required: true
+    put:
+      tags:
+        - Tasks
+      operationId: ChangeComment
+      summary: Change the comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/commentRequest"
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+    delete:
+      tags:
+        - Tasks
+      operationId: DeleteComment
+      summary: Delete the comment
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+  /tasks/{taskId}/tags:
+    parameters:
+      - name: taskId
+        in: path
+        description: Id of the task
+        schema:
+          type: integer
+        required: true    
+    post:
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid      
+      tags:
+        - Tasks
+      operationId: AddTagToTask
+      summary: Add tag to task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/addTagToTaskRequest"
+      responses:
+        '201':
+          description: OK
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '409':
+          $ref: "#/components/responses/conflict"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+  /tasks/{taskId}/tags/{tagId}:
+    parameters:
+      - name: taskId
+        in: path
+        description: Id of the task
+        schema:
+          type: integer
+        required: true  
+      - name: tagId
+        in: path
+        description: Id of the tag
+        schema:
+          type: integer
+        required: true  
+    delete:
+      tags:
+        - Tasks
+      operationId: DeleteTagFromTask
+      summary: Delete tag from task
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"        
+  /tasks/{taskId}/activity-log:
+    get: 
+      tags:
+        - Activity Log
+      operationId: ViewHistoryForTask
+      summary: List changes of the task
+      parameters:
+        - name: taskId
+          in: path
+          description: Id of the task
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                      $ref: "#/components/schemas/activityLog"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"
+  /tags:
+    get: 
+      tags:
+        - Tasks
+      operationId: ListOrSearchTags
+      summary: List tags
+      parameters:
+        - name: limit
+          in: query
+          description: The maximum number of results to return.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          description: Use the cursor from the response to access more results.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                      $ref: "#/components/schemas/tag"
+                  cursor:
+                    type: string
+                    description: Cursor for the next result page.
+                    nullable: true 
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+    post:
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid      
+      tags:
+        - Tasks
+      summary: Create new tag
+      operationId: CreateTag
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createTagRequest"
+      responses:
+        '201':
+          description: OK
+          headers:
+            Location:
+              description: URI of the created tag
+              schema:
+                type: string
+                format: uri  
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '409':
+          $ref: "#/components/responses/conflict"  
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"    
+  /projects:
+    get: 
+      tags:
+        - Projects
+      operationId: ListOrSearchProjects
+      summary: List projects
+      parameters:
+        - name: limit
+          in: query
+          description: The maximum number of results to return.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          description: Use the cursor from the response to access more results.
+          schema:
+            type: string
+        - name: project_name
+          in: query
+          description: Project name
+          schema:
+            type: string
+        - name: description
+          in: query
+          description: Description of the project
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                      $ref: "#/components/schemas/project"
+                  cursor:
+                    type: string
+                    description: Cursor for the next result page.
+                    nullable: true 
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+    post:
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid      
+      tags:
+        - Projects
+      summary: Create new project
+      operationId: CreateProject
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createProjectRequest"
+      responses:
+        '201':
+          description: OK
+          headers:
+            Location:
+              description: URI of the created project
+              schema:
+                type: string
+                format: uri  
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"              
+  /projects/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        description: Id of the project
+        schema:
+          type: integer
+        required: true
+    get: 
+      tags:
+        - Projects
+      operationId: ViewProject
+      summary: Show project
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/project"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"    
+    patch: 
+      tags:
+        - Projects
+      operationId: ChangeProject
+      summary: Change project
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: "#/components/schemas/updateProjectRequest"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/project"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"  
+    delete: 
+      tags:
+        - Projects
+      operationId: DeleteProject
+      summary: Delete project
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/project"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"   
+  /projects/{projectId}/tasks:
+    get:
+      tags:
+        - Projects
+      operationId: ViewTasksOfProject
+      summary: Show tasks of the project
+      parameters:
+        - name: projectId
+          in: path
+          description: Id of the project
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                      $ref: "#/components/schemas/task"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+  /projects/{projectId}/members:
+    parameters:
+      - name: projectId
+        in: path
+        description: Id of the project
+        schema:
+          type: integer
+        required: true    
+    get: 
+      tags:
+        - Projects
+      operationId: ListUserRolesForProject
+      summary: Show users with roles of the project
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  items:
+                    type: array
+                    items: 
+                      $ref: "#/components/schemas/membersInProject"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+    post:
+      tags:
+        - Projects
+      operationId: AddUserToProject
+      summary: Add role for user in project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/membersInProject"
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/membersInProject"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+  /projects/{projectId}/members/{userId}:
+    parameters:
+      - name: projectId
+        in: path
+        description: Id of the project
+        schema:
+          type: integer
+        required: true
+      - name: userId
+        in: path
+        description: Id of the user
+        schema:
+          type: integer
+        required: true
+    patch: 
+      tags:
+        - Projects
+      operationId: ChangeRoleForUser
+      summary: Change user's role for the project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                role:
+                  type: string
+                  enum: 
+                    - developer
+                    - manager
+              required:
+                - role
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/membersInProject"
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"     
+    delete:
+      tags:
+        - Projects
+      operationId: DeleteUserFromProject
+      summary: Delete user from project
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: "#/components/responses/badRequest"
+        '401':
+          $ref: "#/components/responses/unauthorized"
+        '403':
+          $ref: "#/components/responses/forbidden"
+        '404':
+          $ref: "#/components/responses/notFound"
+        '500':
+          $ref: "#/components/responses/internalServerError"
+        '503':
+          $ref: "#/components/responses/serviceUnavailable"          

@@ -1,0 +1,36 @@
+@startuml
+
+actor client as C
+participant front as FR
+participant gateway as G
+participant task as T
+participant messagebroker as B
+participant notification as N
+participant activity as AC
+
+
+'обновление статуса в задаче
+C->FR++: Пользователь выбирает новый статус
+FR->G++: PATCH /tasks/{taskId}
+G->T++: UpdateStatus
+T->T: сохранить новый статус
+T-->G: 200 OK
+G-->FR: 200 OK
+FR-->C: Статус изменён
+deactivate G
+deactivate FR
+
+T->>B++: публикация события task.updated
+deactivate T
+B->N++: отправка события task.updated
+N->N: отправка уведомлений участникам задачи
+
+deactivate N
+B->AC++: отправка события task.updated
+AC->AC: Запись события Status updated в журнал
+deactivate AC
+deactivate B
+
+
+
+@enduml

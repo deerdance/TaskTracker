@@ -1,0 +1,63 @@
+@startuml
+
+actor client as C
+participant front as FR
+participant gateway as G
+participant auth as A
+participant project as P
+participant task as T
+participant messagebroker as B
+participant userprofile as U
+participant notification as N
+participant activity as AC
+
+'создание задачи
+C->FR++: заполнить поля и нажать Создать задачу 
+FR->G++: POST /tasks
+G->A++: проверить токен
+A-->G: токен валиден
+deactivate A
+opt в задаче указан проект
+G->P++: проверить права в проекте
+alt нет прав
+P-->G: 403 Forbidden
+G-->FR: 403 Forbidden
+FR-->C: У вас нет прав на создание задач в проекте (номер проекта)
+else есть права
+P-->G: права есть
+deactivate P
+end
+end
+G->T++: CreateTask
+opt пользователь указал исполнителя
+T->U++: проверить исполнителя
+alt исполнитель недоступен
+U-->G: 422 Unprocessable Content
+G-->FR: 422 Unprocessable Content
+FR-->C: Исполнитель не существует или неактивен
+else исполнитель доступен
+U-->T: исполнитель доступен для назначения
+deactivate U
+end
+end
+T->T:сохранить задачу
+T->>B++: публикация события task.created
+
+T-->G: 201 Created \nLocation: /tasks/{taskId}
+deactivate T
+G-->FR: 201 Created \nLocation: /tasks/{taskId}
+deactivate G
+FR-->C: Задача создана (URI задачи)
+deactivate FR
+B->N++: отправка события task.created
+N->N: отправка уведомлений участникам
+
+deactivate N
+B->AC++: отправка события task.created
+deactivate B
+AC->AC: запись события Task created в журнал
+deactivate AC
+
+
+
+@enduml

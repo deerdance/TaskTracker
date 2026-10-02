@@ -1,0 +1,33 @@
+@startuml
+
+actor client as C
+participant front as FR
+participant gateway as G
+participant comment as COM
+participant messagebroker as B
+participant notification as N
+participant activity as AC
+
+'добавление комментария в задачу
+C->FR++: Пользователь заполняет поле комментарий и нажимает на кнопку Сохранить
+FR->G++: POST /tasks/{taskId}/comments
+G->COM++: AddComment
+COM->COM: сохранить комментарий
+COM->>B++: публикация события comment.added
+COM-->G: 201 Created
+deactivate COM
+G-->FR: 201 Created
+deactivate G
+FR-->C: Комментарий добавлен    
+deactivate FR
+B->N++: отправка события comment.added
+N->>N: отправка сообщений участникам задачи
+B->AC++: отправка события comment.added
+AC->AC: запись события Comment added в журнал
+deactivate AC
+deactivate B
+
+deactivate N
+
+
+@enduml
